@@ -153,35 +153,38 @@ class IRC(object):
             self.event_connect()
         elif args[1] == '433':
             self.event_nick_in_use()
-        elif args[1] in ('INVITE','JOIN','KICK','PART','PRIVMSG','QUIT'):
-            nick  = args[0].split('!')[0][1:]
-            ident = args[0].split('!')[1]
-            host  = ident.split('@')[1]
-            if nick != nickname:
-                if args[1] == 'INVITE':
-                    chan = args[3][1:]
-                    self.event_invite(nick, chan)
-                elif args[1] == 'JOIN':
-                    chan = args[2][1:]
-                    self.event_join(nick, chan)
-                elif args[1] == 'KICK':
-                    chan   = args[2]
-                    kicked = args[3]
-                    self.event_kick(nick, chan, kicked)
-                elif args[1] == 'PART':
-                    chan = args[2]
-                    self.event_part(nick, chan)
-                elif args[1] == 'PRIVMSG':
-                    chan = args[2]
-                    msg  = data.split(f'{args[0]} PRIVMSG {chan} :')[1]
-                    if msg.startswith('\001'):
-                        self.event_ctcp(nick, chan, msg)
-                    elif chan == nickname:
-                        self.event_private(nick, msg)
-                    else:
-                        self.event_message(nick, chan, msg)
-                elif args[1] == 'QUIT':
-                    self.event_quit(nick)
+        elif args[1] == 'INVITE':
+            nick = args[0].split('!')[0][1:]
+            chan = args[3][1:]
+            self.event_invite(nick, chan)
+        elif args[1] == 'JOIN':
+            nick = args[0].split('!')[0][1:]
+            chan = args[2][1:]
+            self.event_join(nick, chan)
+        elif args[1] == 'KICK':
+            nick   = args[0].split('!')[0][1:]
+            chan   = args[2]
+            kicked = args[3]
+            self.event_kick(nick, chan, kicked)
+        elif args[1] == 'PART':
+            nick = args[0].split('!')[0][1:]
+            chan = args[2]
+            self.event_part(nick, chan)
+        elif args[1] == 'PRIVMSG':
+            nick = args[0].split('!')[0][1:]
+            #ident = args[0].split('!')[1]
+            #host  = ident.split('@')[1]
+            chan = args[2]
+            msg  = data.split(f'{args[0]} PRIVMSG {chan} :')[1]
+            if msg.startswith('\001'):
+                self.event_ctcp(nick, chan, msg)
+            elif chan == nickname:
+                self.event_private(nick, msg)
+            else:
+                self.event_message(nick, chan, msg)
+        elif args[1] == 'QUIT':
+            nick = args[0].split('!')[0][1:]
+            self.event_quit(nick)
 
     def identify(self, nick, passwd):
         self.sendmsg('nickserv', f'recover {nick} {passwd}')
@@ -227,8 +230,8 @@ class IRC(object):
     def notice(self, target, msg):
         self.raw(f'NOTICE {target} :{msg}')
 
-    def oper(self, nick, password):
-        self.raw(f'OPER {nick} {password}')
+    def oper(self, nick, passwd):
+        self.raw(f'OPER {nick} {passwd}')
 
     def part(self, chan, msg=None):
         if msg:
