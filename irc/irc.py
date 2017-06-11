@@ -108,7 +108,7 @@ class IRC(object):
             self.identify(nickname, nickserv_password)
         if operator_password:
             self.oper(username, operator_password)
-        self.join(channel, key)
+        self.join_channel(channel, key)
 
     def event_ctcp(self, nick, chan, msg):
         pass
@@ -127,7 +127,7 @@ class IRC(object):
     def event_kick(self, nick, chan, kicked):
         if kicked == nickname and chan == channel:
             time.sleep(3)
-            self.join(channel, key)
+            self.join_channel(channel, key)
 
     def event_message(self, nick, chan, msg):
         if msg == '!test':
@@ -190,7 +190,7 @@ class IRC(object):
     def invite(self, nick, chan):
         self.raw(f'INVITE {nick} {chan}')
 
-    def join(self, chan, key=None):
+    def join_channel(self, chan, key=None):
         if key:
             self.raw(f'JOIN {chan} {key}')
         else:
