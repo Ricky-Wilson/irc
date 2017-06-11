@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# IRC Class
+# IRC Bot Skeleton
 # Developed by acidvegas in Python 3
 # https://github.com/acidvegas/irc
 # irc.py
@@ -19,13 +19,14 @@ channel  = '#dev'
 key      = None
 
 # Identity
-nickname = 'DevBot'
-username = 'devbot'
-realname = 'Python IRC Bot'
+nickname  = 'DevBot'
+username  = 'devbot'
+realname  = 'Python IRC Bot'
+cert_file = None
 
 # Login
-nickserv    = None
-oper_passwd = None
+nickserv_password = None
+operator_password = None
 
 # Formatting Control Characters / Color Codes
 bold        = '\x02'
@@ -63,20 +64,6 @@ def get_time():
     return time.strftime('%I:%M:%S')
 
 class IRC(object):
-    server      = server
-    port        = port
-    use_ipv6    = use_ipv6
-    use_ssl     = use_ssl
-    vhost       = vhost
-    password    = password
-    channel     = channel
-    key         = key
-    nickname    = nickname
-    username    = username
-    realname    = realname
-    nickserv    = nickserv
-    oper_passwd = oper_passwd
-
     def __init__(self):
         self.sock = None
 
@@ -92,11 +79,11 @@ class IRC(object):
     def connect(self):
         try:
             self.create_socket()
-            self.sock.connect((self.server, self.port))
-            if self.password:
-                self.raw('PASS ' + self.password)
-            self.raw(f'USER {self.username} 0 * :{self.realname}')
-            self.nick(self.nickname)
+            self.sock.connect((server, port))
+            if password:
+                self.raw('PASS ' + password)
+            self.raw(f'USER {username} 0 * :{realname}')
+            self.nick(nickname)
         except socket.error as ex:
             error('Failed to connect to IRC server.', ex)
             self.event_disconnect()
@@ -104,24 +91,24 @@ class IRC(object):
             self.listen()
 
     def create_socket(self):
-        if self.use_ipv6:
+        if use_ipv6:
             self.sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         else:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        if self.vhost:
-            self.sock.bind((self.vhost, 0))
-        if self.use_ssl:
-            self.sock = ssl.wrap_socket(self.sock)
+        if vhost:
+            self.sock.bind((vhost, 0))
+        if use_ssl:
+            self.sock = ssl.wrap_socket(self.sock, certfile=cert_file)
 
     def ctcp(self, target, data):
         self.sendmsg(target, f'\001{data}\001')
 
     def event_connect(self):
-        if self.nickserv:
-            self.identify(self.username, self.nickserv)
-        if self.oper_passwd:
-            self.oper(self.username, self.oper_passwd)
-        self.join(self.channel, self.key)
+        if nickserv_password:
+            self.identify(nickname, nickserv_password)
+        if operator_password:
+            self.oper(username, operator_password)
+        self.join(channel, key)
 
     def event_ctcp(self, nick, chan, msg):
         pass
@@ -138,9 +125,9 @@ class IRC(object):
         pass
 
     def event_kick(self, nick, chan, kicked):
-        if kicked == self.nickname and chan == self.channel:
+        if kicked == nickname and chan == channel:
             time.sleep(3)
-            self.join(self.channel, self.key)
+            self.join(channel, key)
 
     def event_message(self, nick, chan, msg):
         if msg == '!test':
@@ -166,19 +153,11 @@ class IRC(object):
             self.event_connect()
         elif args[1] == '433':
             self.event_nick_in_use()
-        elif args[1] == 'NOTICE':
-            if args[3] == ':***':
-                if 'You were forced to join' in data:
-                    chan = args[9]
-                    self.part(chan)
-                if 'You were forced to part' in data:
-                    chan = args[9]
-                    self.join(chan)
         elif args[1] in ('INVITE','JOIN','KICK','PART','PRIVMSG','QUIT'):
             nick  = args[0].split('!')[0][1:]
             ident = args[0].split('!')[1]
             host  = ident.split('@')[1]
-            if nick != self.nickname:
+            if nick != nickname:
                 if args[1] == 'INVITE':
                     chan = args[3][1:]
                     self.event_invite(nick, chan)
@@ -197,16 +176,16 @@ class IRC(object):
                     msg  = data.split(f'{args[0]} PRIVMSG {chan} :')[1]
                     if msg.startswith('\001'):
                         self.event_ctcp(nick, chan, msg)
-                    elif chan == self.nickname:
+                    elif chan == nickname:
                         self.event_private(nick, msg)
                     else:
                         self.event_message(nick, chan, msg)
                 elif args[1] == 'QUIT':
                     self.event_quit(nick)
 
-    def identify(self, username, password):
-        self.sendmsg('nickserv', f'recover {username} {password}')
-        self.sendmsg('nickserv', f'identify {username} {password}')
+    def identify(self, nick, passwd):
+        self.sendmsg('nickserv', f'recover {nick} {passwd}')
+        self.sendmsg('nickserv', f'identify {nick} {passwd}')
 
     def invite(self, nick, chan):
         self.raw(f'INVITE {nick} {chan}')
@@ -224,15 +203,16 @@ class IRC(object):
                 if data:
                     for line in (line for line in data.split('\r\n') if line):
                         debug(line)
-                        if line.startswith('ERROR :Closing Link:'):
-                            raise Exception('Connection has closed.')
-                        elif len(line.split()) >= 2:
-                            self.handle_events(line)
+                        if len(line.split()) >= 2:
+                            if line.startswith('ERROR :Closing Link:'):
+                                raise Exception('Connection has closed.')
+                            else:
+                                self.handle_events(line)
                 else:
                     error('No data recieved from server.')
                     break
             except (UnicodeDecodeError,UnicodeEncodeError):
-                error('Unicode error has occured.')
+                pass
             except Exception as ex:
                 error('Unexpected error occured.', ex)
                 break
