@@ -230,8 +230,8 @@ class IRC(object):
     def notice(self, target, msg):
         self.raw(f'NOTICE {target} :{msg}')
 
-    def oper(self, nick, passwd):
-        self.raw(f'OPER {nick} {passwd}')
+    def oper(self, user, passwd):
+        self.raw(f'OPER {user} {passwd}')
 
     def part(self, chan, msg=None):
         if msg:
