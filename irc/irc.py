@@ -100,7 +100,7 @@ class IRC(object):
 		if vhost:
 			self.sock.bind((vhost, 0))
 		if use_ssl:
-			self.sock = ssl.wrap_socket(self.sock, keyfile=key_file, certfile=cert_file)
+			self.sock = ssl.wrap_socket(self.sock, keyfile=cert_key, certfile=cert_file)
 
 	def ctcp(self, target, data):
 		self.sendmsg(target, f'\001{data}\001')
@@ -149,7 +149,7 @@ class IRC(object):
 
 	def handle_events(self, data):
 		args = data.split()
-		if line.startswith('ERROR :Closing Link:'):
+		if data.startswith('ERROR :Closing Link:'):
 			raise Exception('Connection has closed.')
 		elif args[0] == 'PING':
 			self.raw('PONG ' + args[1][1:])
