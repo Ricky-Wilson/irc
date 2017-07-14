@@ -207,7 +207,7 @@ class IRC(object):
 		while True:
 			try:
 				data = self.sock.recv(1024).decode('utf-8')
-				for line in data.split('\r\n'):
+				for line in (line for line in data.split('\r\n') if line):
 					debug(line)
 					if len(line.split()) >= 2:
 						self.handle_events(line)
